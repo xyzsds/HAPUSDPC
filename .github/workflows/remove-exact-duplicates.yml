@@ -1,0 +1,49 @@
+name: Remove Exact Duplicate Lines
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - blocked.txt
+
+jobs:
+  deduplicate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Remove exact duplicate lines
+        run: |
+          python <<EOF
+          from pathlib import Path
+
+          input_file = Path("blocked.txt")
+          output_file = Path("output.txt")
+
+          seen = set()
+          result = []
+
+          for line in input_file.read_text().splitlines():
+              line = line.strip()
+              if line and line not in seen:
+                  seen.add(line)
+                  result.append(line)
+
+          output_file.write_text("\n".join(result) + "\n")
+          print("output.txt generated.")
+          EOF
+
+      - name: Commit and push output.txt
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add output.txt
+          git commit -m "chore: remove exact duplicate domains"
+          git push
